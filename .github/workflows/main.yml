@@ -1,15 +1,50 @@
-"""
-FastAPI application for a simple Hello World API.
-"""
-from fastapi import FastAPI
+name: Python CI/CD
 
-app = FastAPI()
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
-@app.get("/")
-async def root():
-    """
-    Root endpoint that returns a Hello World message.
-    Returns:
-        dict: A dictionary containing a welcome message
-    """
-    return {"message": "Hello, World!"}
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run Pylint
+      run: |
+        pylint $(git ls-files '*.py')
+        
+    - name: Run Tests
+      run: |
+        pytest
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+        
+#    - name: Deploy to Azure Web App
+#      uses: azure/webapps-deploy@v2
+#      with:
+#        app-name: 'YOUR_APP_NAME'
+#       # publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
