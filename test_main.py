@@ -1,7 +1,6 @@
 """
 Test module for the FastAPI application.
 """
-
 from fastapi.testclient import TestClient
 from main import app
 
