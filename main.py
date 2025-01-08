@@ -1,8 +1,7 @@
-from fastapi import FastAPI
-
 """
 FastAPI application for a simple Hello World API.
 """
+from fastapi import FastAPI
 
 app = FastAPI()
 
