@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Password Analyzer</title>
+    <style>
+        :root {
+            --weak: #ff4444;
+            --medium: #ffbb33;
+            --strong: #00C851;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .strength-meter {
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .strength-meter-fill {
+            height: 100%;
+            width: 0;
+            transition: all 0.5s ease;
+            border-radius: 5px;
+        }
+
+        .requirements {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .requirement-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            color: #666;
+        }
+
+        .requirement-item.met {
+            color: var(--strong);
+        }
+
+        .crack-time {
+            text-align: center;
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .check-icon {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Secure Password Analyzer</h1>
+        
+        <input 
+            type="text" 
+            id="passwordInput" 
+            class="password-input"
+            placeholder="Enter your password"
+            autocomplete="off"
+        >
+
+        <div class="strength-meter">
+            <div id="strengthMeterFill" class="strength-meter-fill"></div>
+        </div>
+
+        <div id="crackTime" class="crack-time">
+            Time to crack: instant
+        </div>
+
+        <div class="requirements">
+            <h3>Password Requirements:</h3>
+            <div id="requirementsList"></div>
+        </div>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('passwordInput');
+        const strengthMeterFill = document.getElementById('strengthMeterFill');
+        const requirementsList = document.getElementById('requirementsList');
+        const crackTime = document.getElementById('crackTime');
+
+        async function checkPassword(password) {
+            try {
+                const response = await fetch('http://localhost:8000/analyze-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ password }),
+                });
+                
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function updateUI(data) {
+            // Update strength meter
+            strengthMeterFill.style.width = `${data.strength}%`;
+            
+            // Set color based on strength
+            if (data.strength < 40) {
+                strengthMeterFill.style.backgroundColor = 'var(--weak)';
+            } else if (data.strength < 80) {
+                strengthMeterFill.style.backgroundColor = 'var(--medium)';
+            } else {
+                strengthMeterFill.style.backgroundColor = 'var(--strong)';
+            }
+
+            // Update crack time
+            crackTime.textContent = `Time to crack: ${data.timeToHack}`;
+
+            // Update requirements list
+            requirementsList.innerHTML = data.feedback
+                .map(item => `
+                    <div class="requirement-item ${item.startsWith('Contains') ? 'met' : ''}">
+                        ${item.startsWith('Contains') ? '✓' : '○'} ${item}
+                    </div>
+                `)
+                .join('');
+        }
+
+        passwordInput.addEventListener('input', (e) => {
+            checkPassword(e.target.value);
+        });
+    </script>
+</body>
+</html>

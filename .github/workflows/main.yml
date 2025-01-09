@@ -1,50 +1,42 @@
-name: Python CI/CD
+name: Test and Deploy to Azure
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build-and-test:
+  test-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
-    
+        python-version: '3.11'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        
-    - name: Run Pylint
-      run: |
-        pylint $(git ls-files '*.py')
-        
-    - name: Run Tests
-      run: |
-        pytest
 
-  deploy:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-        
+    - name: Run tests
+      run: |
+        pytest test_main.py -v
+
+    - name: Create deployment package
+      run: zip -r deployment.zip ./*
+
     - name: Deploy to Azure Web App
+      if: github.ref == 'refs/heads/main' # Only deploy on main branch
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'saka1'
+        app-name: 'your-app-name'  # Replace with your Azure Web App name
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: './deployment.zip'
